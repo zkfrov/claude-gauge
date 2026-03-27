@@ -1,0 +1,8 @@
+# Compiled binary
+claude-gauge
+
+# macOS
+.DS_Store
+
+# Preferences (user-specific)
+prefs.json
