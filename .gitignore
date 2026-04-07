@@ -6,3 +6,6 @@ claude-gauge
 
 # Preferences (user-specific)
 prefs.json
+
+# Claude Code local settings
+.claude/

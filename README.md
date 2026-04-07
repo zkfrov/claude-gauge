@@ -2,13 +2,19 @@
 
 Track your Claude Code usage quotas in real time. No daemons, no extra API calls.
 
-## Statusline hook (all platforms)
+## Install as plugin (recommended)
 
-A simple hook that displays your usage with visual bars and countdown timers at the bottom of every Claude Code session.
+```bash
+claude plugin install --source github:zkfrov/claude-gauge
+```
+
+That's it. The statusline activates automatically. Works on macOS, Linux, and WSL.
 
 ![statusline](assets/screenshot-statusline.png)
 
-### Quick setup
+## Manual setup
+
+If you prefer not to use the plugin system:
 
 1. Download the script:
 
@@ -28,18 +34,75 @@ chmod +x ~/.claude/statusline.sh
 }
 ```
 
-That's it. Works on macOS, Linux, and WSL.
-
 ### What it shows
 
 ```
-◷ ▰▰▱▱▱▱▱▱ 26% 13m  ◫ ▰▰▰▱▱▱▱▱ 39% 1d·2h
+◧ ▰▱▱▱▱▱▱▱ 8% 64K/1M  ◷ ▰▰▰▰▰▱▱▱ 68% 35m  ◫ ▰▰▰▱▱▱▱▱ 39% 4d·6h
 ```
 
+- `◧` Context window — percentage, bar, and token counts
 - `◷` Session (5h window) — percentage, bar, and countdown to reset
 - `◫` Week (7d window) — percentage, bar, and countdown to reset
 
 Updates automatically after every Claude response.
+
+### Configuration
+
+Create `~/.claude-gauge/config.json` to customize the statusline. All fields are optional — defaults are used for anything omitted.
+
+```json
+{
+  "show": ["context", "session", "week"],
+  "tokens": true,
+  "style": "blocks",
+  "icons": "default"
+}
+```
+
+| Field | Description | Default |
+|-------|-------------|---------|
+| `show` | Array of sections to display, in order | `["context", "session", "week"]` |
+| `tokens` | Show token counts (e.g. `64K/1M`) next to context | `true` |
+| `style` | Bar style | `"blocks"` |
+| `icons` | Icon set | `"default"` |
+
+#### Bar styles
+
+| Style | Preview |
+|-------|---------|
+| `blocks` | `▰▰▰▰▰▱▱▱` |
+| `classic` | `█████░░░` |
+| `dots` | `●●●●●○○○` |
+| `thin` | `━━━━━───` |
+| `ascii` | `#####···` |
+| `arrows` | `▸▸▸▸▸▹▹▹` |
+
+#### Icon sets
+
+| Icons | Context | Session | Week |
+|-------|---------|---------|------|
+| `default` | ◧ | ◷ | ◫ |
+| `emoji` | 🧠 | ⏱ | 📅 |
+| `clocks` | ◔ | ◑ | ◕ |
+| `letters` | C | S | W |
+| `minimal` | · | · | · |
+| `ascii` | [c] | [s] | [w] |
+| `nerd` |  |  |  |
+| `none` | _(no icon)_ | _(no icon)_ | _(no icon)_ |
+
+#### Examples
+
+Only context and session, no week:
+
+```json
+{ "show": ["context", "session"] }
+```
+
+Classic style with emoji icons, no token counts:
+
+```json
+{ "style": "classic", "icons": "emoji", "tokens": false }
+```
 
 ## macOS menu bar app
 
@@ -60,7 +123,7 @@ Auto-start on login: System Settings > General > Login Items > add `~/.claude-ga
 
 ## How it works
 
-Claude Code passes `rate_limits` data (percentages + reset timestamps) to statusline scripts on every response. The hook:
+Claude Code passes `rate_limits` and `context_window` data to statusline scripts on every response. The hook:
 
 1. Displays usage bars at the bottom of your terminal
 2. Caches the data to `~/.claude-gauge/data.json`
@@ -92,9 +155,10 @@ macOS menu bar app (optional)
 
 | Method | What you get | Platform |
 |--------|-------------|----------|
-| [Quick setup](#quick-setup) | Statusline hook only | Any |
-| `./install.sh --hook` | Statusline hook (via script) | Any |
-| `./install.sh` | Statusline hook + menu bar app | macOS |
+| Plugin install | Statusline (auto-configured) | Any |
+| [Manual setup](#manual-setup) | Statusline (manual config) | Any |
+| `./install.sh --hook` | Statusline (via script) | Any |
+| `./install.sh` | Statusline + menu bar app | macOS |
 
 ## Menu bar settings
 
@@ -109,11 +173,15 @@ All settings are in the dropdown. Preferences persist in `~/.claude-gauge/prefs.
 ## Uninstall
 
 ```bash
+# If installed as plugin:
+claude plugin uninstall claude-gauge
+
 # If installed via install script:
 ./install.sh --uninstall
 
 # If installed manually:
 rm ~/.claude/statusline.sh
+rm -rf ~/.claude-gauge
 # Remove the "statusLine" field from ~/.claude/settings.json
 ```
 

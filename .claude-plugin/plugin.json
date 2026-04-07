@@ -1,0 +1,13 @@
+{
+  "name": "claude-gauge",
+  "version": "1.0.0",
+  "description": "Track Claude Code usage quotas with visual bars — context window, session, and weekly limits",
+  "author": {
+    "name": "zkfrov",
+    "url": "https://github.com/zkfrov"
+  },
+  "homepage": "https://github.com/zkfrov/claude-gauge",
+  "repository": "https://github.com/zkfrov/claude-gauge",
+  "license": "MIT",
+  "keywords": ["statusline", "rate-limits", "context-window", "usage", "quota"]
+}
