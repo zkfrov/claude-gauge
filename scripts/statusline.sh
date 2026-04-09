@@ -6,8 +6,13 @@ input=$(cat)
 DATA_DIR="${CLAUDE_PLUGIN_DATA:-$HOME/.claude-gauge}"
 mkdir -p "$DATA_DIR"
 
-# Write cache for menu bar app
-echo "$input" | jq '{rate_limits: .rate_limits, cost: .cost, model: .model, context_window: .context_window}' > "$DATA_DIR/data.json" 2>/dev/null
+# Write cache for menu bar app (atomic write to avoid truncation on jq failure)
+tmp=$(mktemp "$DATA_DIR/data.json.XXXXXX")
+if echo "$input" | jq '{rate_limits: .rate_limits, cost: .cost, model: .model, context_window: .context_window}' > "$tmp" 2>/dev/null; then
+  mv -f "$tmp" "$DATA_DIR/data.json"
+else
+  rm -f "$tmp"
+fi
 
 # Read config
 # - show: array of sections to display, in order (default: ["context", "session", "week"])
@@ -32,12 +37,12 @@ esac
 
 # Icon sets: context, session, week
 case "$icons" in
-  emoji)    IC="🧠" IS="⏱" IW="📅" ;;
+  emoji)    IC="🧠" IS="⏳" IW="📅" ;;
   clocks)   IC="◔" IS="◑" IW="◕" ;;
   letters)  IC="C" IS="S" IW="W" ;;
   minimal)  IC="·" IS="·" IW="·" ;;
+  labels)   IC="context" IS="session" IW="week" ;;
   ascii)    IC="[c]" IS="[s]" IW="[w]" ;;
-  nerd)     IC="" IS="" IW="" ;;
   none)     IC="" IS="" IW="" ;;
   *)        IC="◧" IS="◷" IW="◫" ;;  # default
 esac
@@ -45,7 +50,9 @@ esac
 # Build bar: $1=percentage $2=width
 bar() {
   local pct=$1 w=${2:-8}
+  [ "$pct" -gt 100 ] && pct=100
   local filled=$(( (pct * w + 50) / 100 ))
+  [ "$filled" -gt "$w" ] && filled=$w
   local empty=$((w - filled))
   local b=""
   for ((i=0; i<filled; i++)); do b+="$FILL"; done
@@ -97,7 +104,7 @@ pct7=$(echo "$input" | jq -r '.rate_limits.seven_day.used_percentage // empty' 2
 rst7=$(echo "$input" | jq -r '.rate_limits.seven_day.resets_at // empty' 2>/dev/null)
 pctc=$(echo "$input" | jq -r '.context_window.used_percentage // empty' 2>/dev/null)
 ctxsize=$(echo "$input" | jq -r '.context_window.context_window_size // empty' 2>/dev/null)
-ctxused=$(echo "$input" | jq -r '(.context_window.total_input_tokens // 0) + (.context_window.total_output_tokens // 0)' 2>/dev/null)
+ctxused=$(echo "$input" | jq -r '(.context_window.current_usage.input_tokens // 0) + (.context_window.current_usage.output_tokens // 0) + (.context_window.current_usage.cache_creation_input_tokens // 0) + (.context_window.current_usage.cache_read_input_tokens // 0)' 2>/dev/null)
 
 # Build output in configured order
 parts=""
